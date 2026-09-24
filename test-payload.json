@@ -1,0 +1,9 @@
+{
+  "hook_event_name": "pre_approval_request",
+  "surface": "cli",
+  "session_key": "install-test",
+  "command": "rm -rf /tmp/example --no-preserve-root",
+  "description": "Example: destructive command flagged by the security scanner",
+  "pattern_key": "rm_rf",
+  "pattern_keys": ["rm_rf"]
+}
