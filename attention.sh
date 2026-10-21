@@ -16,9 +16,15 @@
 
 set -euo pipefail
 
+# Everything this script creates (state file, temp files) holds approval
+# commands and session identifiers: keep it owner-only.
+umask 077
+
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/hermes-attention"
 STATE="$STATE_DIR/state.json"
-mkdir -p "$STATE_DIR"
+mkdir -p -m 700 "$STATE_DIR"
+chmod 700 "$STATE_DIR" 2>/dev/null || true
+[ -f "$STATE" ] && chmod 600 "$STATE"
 
 clip() { local s=$1 n=$2; [ ${#s} -gt "$n" ] && printf '%s...' "${s:0:$n}" || printf '%s' "$s"; }
 
@@ -82,17 +88,31 @@ case "$event" in
 
     # No -a flag on purpose: app_name must stay "notify-send" for the
     # Omarchy notifications service to let critical alerts through DND.
+    # The toast body is STATIC on purpose: command and description text
+    # never travel through any process's argv (visible via ps) and never
+    # land in the notification daemon's history. The full text lives only
+    # in the 0600 state file, shown on click by the bar widget's panel.
     id=$(notify-send -u critical -i dialog-warning "${replace[@]}" -p -- \
       "Canari needs your approval" \
-      "$(printf '%s\n%s' "$description" "$command_txt")" 2>/dev/null || echo 0)
+      "An agent is waiting - open the attention panel for the command" \
+      2>/dev/null || echo 0)
 
-    jq -n --argjson count "$count" --arg command "$command_txt" \
-      --arg description "$description" --arg patternKeys "$pattern_keys" \
-      --arg sessionKey "$session_key" --arg surface "$surface" \
+    # Sensitive strings (command, description, pattern/session keys) are
+    # written to 0600 temp files and bound with --rawfile, so they appear
+    # in no process arguments; only filename placeholders do.
+    tf() { local t; t=$(mktemp "$STATE_DIR/.XXXXXX"); printf '%s' "$1" > "$t"; printf '%s' "$t"; }
+    cmdf=$(tf "$command_txt")  descf=$(tf "$description")
+    pkf=$(tf "$pattern_keys")  skf=$(tf "$session_key")  sff=$(tf "$surface")
+
+    jq -n --argjson count "$count" \
       --argjson since "$since" --argjson notifId "${id:-0}" \
+      --rawfile command "$cmdf" --rawfile description "$descf" \
+      --rawfile patternKeys "$pkf" --rawfile sessionKey "$skf" \
+      --rawfile surface "$sff" \
       '{pending:true,count:$count,command:$command,description:$description,
         patternKeys:$patternKeys,sessionKey:$sessionKey,surface:$surface,
         since:$since,notifId:$notifId}' > "$STATE"
+    rm -f "$cmdf" "$descf" "$pkf" "$skf" "$sff"
     ;;
 
   post_approval_response)

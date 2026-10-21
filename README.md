@@ -10,7 +10,10 @@ to another virtual desktop.
 - A **critical on-screen notification** pops the moment Hermes raises an
   approval prompt. Critical urgency means it stays until you answer it, and it
   passes through Omarchy's do-not-disturb (which explicitly trusts critical
-  alerts from `notify-send`).
+  alerts from `notify-send`). The toast body is deliberately generic — the
+  flagged command never enters process arguments or the notification
+  daemon's history; it lives only in the owner-only state file and is shown
+  on click by the panel.
 - A **red pulsing chip** appears in the bar and keeps pulsing until the prompt
   is answered — for when you were away from the screen when the toast popped.
 - Click the chip for the flagged command, the reason it was flagged, and how
