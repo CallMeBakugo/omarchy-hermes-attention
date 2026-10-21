@@ -2,7 +2,9 @@
   "schemaVersion": 1,
   "id": "bakugo.hermes-attention",
   "name": "Hermes Attention",
-  "kinds": ["bar-widget"],
+  "kinds": [
+    "bar-widget"
+  ],
   "activation": "on-demand",
   "entryPoints": {
     "barWidget": "Panel.qml"
@@ -11,16 +13,29 @@
     "displayName": "Hermes Attention",
     "description": "Pulses red when a Hermes agent is waiting for your approval. Click for the flagged command; right-click to silence.",
     "category": "AI",
-    "aliases": ["hermes", "canari", "attention"],
+    "aliases": [
+      "hermes",
+      "canari",
+      "attention"
+    ],
     "allowMultiple": false,
     "defaults": {
       "staleMin": 30
     },
     "schema": [
-      { "key": "staleMin", "type": "integer", "label": "Auto-silence after N minutes without a new prompt", "min": 1, "max": 240, "step": 1, "defaultValue": 30 }
+      {
+        "key": "staleMin",
+        "type": "integer",
+        "label": "Auto-silence after N minutes without a new prompt",
+        "min": 1,
+        "max": 240,
+        "step": 1,
+        "defaultValue": 30
+      }
     ]
   },
   "version": "1.0.0",
   "author": "bakugo",
-  "license": "MIT"
+  "license": "MIT",
+  "description": "Attention beacon for the Omarchy bar: pulses red when a Hermes agent is waiting for your approval. Click for the flagged command; right-click to silence."
 }
