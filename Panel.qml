@@ -43,7 +43,8 @@ Panel {
   function alpha(c, a) { return Qt.rgba(c.r, c.g, c.b, a) }
 
   function silence() {
-    Quickshell.execDetached(["/home/bakugo/.hermes/agent-hooks/attention.sh", "--clear"])
+    const hermesHome = Quickshell.env("HERMES_HOME") || (Quickshell.env("HOME") + "/.hermes")
+    Quickshell.execDetached([hermesHome + "/agent-hooks/attention.sh", "--clear"])
   }
 
   onOpenedChanged: if (opened) {
@@ -90,36 +91,47 @@ Panel {
 
   // ---- bar chip -----------------------------------------------------------
 
-  BorderSurface {
-    id: chipBackdrop
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.verticalCenter: parent.verticalCenter
-    width: parent.width
-    height: Style.space(18)
-    radius: Math.min(Style.cornerRadius, height / 2)
-    color: root.pending ? root.alpha(root.urgent, 0.22) : root.alpha(root.foreground, 0.06)
-    borderSpec: Border.flat(
-      root.pending ? root.urgent : root.alpha(root.foreground, 0.35), 1)
-
-    // The chip breathes while an approval is pending.
-    SequentialAnimation on opacity {
-      running: root.pending
-      loops: Animation.Infinite
-      NumberAnimation { from: 1.0; to: 0.45; duration: 650; easing.type: Easing.InOutQuad }
-      NumberAnimation { from: 0.45; to: 1.0; duration: 650; easing.type: Easing.InOutQuad }
-    }
-  }
-
   WidgetButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.pending ? (root.count > 1 ? "×" + root.count : "!") : "✓"
-    foreground: root.pending ? root.urgent : root.dim
-    active: false
-    fontSize: Style.font.caption
-    horizontalMargin: 7
-    verticalPadding: 5
+    hasVisualContent: true
+    labelVisible: false
+    fixedWidth: vertical ? -1 : Math.max(Style.bar.iconSlot, chip.width + 4)
+    fixedHeight: vertical ? Style.bar.iconSlot : -1
+
+    BorderSurface {
+      id: chip
+      anchors.centerIn: parent
+      width: Math.max(height, chipLabel.implicitWidth + 10)
+      height: Style.bar.iconSize
+      radius: height / 2
+      scale: button.pressScale
+      color: root.pending ? root.alpha(root.urgent, 0.20) : root.alpha(root.foreground, 0.08)
+      borderSpec: Border.flat(
+        root.pending ? root.urgent : root.alpha(root.foreground, 0.58), 1)
+
+      Text {
+        id: chipLabel
+        anchors.centerIn: parent
+        textFormat: Text.PlainText
+        text: root.pending ? (root.count > 1 ? "×" + root.count : "!") : "✓"
+        color: root.pending ? root.urgent : root.foreground
+        font.family: root.fontFamily
+        font.pixelSize: root.pending && root.count > 1 ? 13 : 17
+        font.bold: true
+        renderType: Text.NativeRendering
+      }
+
+      SequentialAnimation on opacity {
+        running: root.pending && !Style.reduceMotion
+        loops: Animation.Infinite
+        NumberAnimation { from: 1.0; to: 0.65; duration: 650; easing.type: Easing.InOutQuad }
+        NumberAnimation { from: 0.65; to: 1.0; duration: 650; easing.type: Easing.InOutQuad }
+        onStopped: chip.opacity = 1
+      }
+    }
+
     tooltipText: root.pending
       ? "Canari needs your approval" + (root.count > 1 ? " (" + root.count + " waiting)" : "")
         + (root.waitingFor !== "" ? "\n" + root.waitingFor : "")
