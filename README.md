@@ -6,14 +6,24 @@ See when Hermes Agent needs you to approve a command, even from another workspac
 
 ## Install
 
-Requires Omarchy 4.x, [Hermes Agent](https://github.com/NousResearch/hermes-agent) with shell hooks, and the `jq`, `notify-send`, and `busctl` commands.
+Requires Omarchy 4.x, [Hermes Agent](https://github.com/NousResearch/hermes-agent) with shell hooks, and Git for hook setup, and the `jq`, `notify-send`, and `busctl` commands.
 
 ```sh
-omarchy plugin add https://github.com/CallMeBakugo/omarchy-hermes-attention.git --enable
-git clone https://github.com/CallMeBakugo/omarchy-hermes-attention.git
-cd omarchy-hermes-attention
-bash install.sh
+omarchy plugin add https://github.com/CallMeBakugo/omarchy-hermes-attention.git
 ```
+
+Use that same plugin checkout to install the hook. Copy the full SHA for the snapshot you intend to install from the [Marketplace listing](https://plugins.omarchy.org/plugin.html?id=bakugo.hermes-attention) or the commit you reviewed on GitHub. Set `reviewed_commit` to that value. The Omarchy command above fetches the current branch, so check the SHA and the two hook files before running the installer or enabling the widget.
+
+```sh
+plugin_dir="$HOME/.config/omarchy/plugins/bakugo.hermes-attention"
+reviewed_commit='<full 40-character reviewed commit SHA>'
+test "$(git -C "$plugin_dir" rev-parse HEAD)" = "$reviewed_commit" &&
+  git -C "$plugin_dir" diff --quiet "$reviewed_commit" -- install.sh attention.sh &&
+  bash "$plugin_dir/install.sh" "$reviewed_commit" &&
+  omarchy plugin enable bakugo.hermes-attention
+```
+
+If the installed checkout is at a different commit, inspect it before using it or check out the exact reviewed commit in the installed plugin directory and rerun the checks. The installer copies the hook from that commit. It does not clone another repository. When updating an existing hook, compare it with the reviewed copy, then rerun the same command with `--replace` after the SHA to approve replacing it. Hermes continues to use the installed copy until you explicitly replace it.
 
 Add the installed hook's absolute path to both event lists under `hooks` in your Hermes `config.yaml`. Merge these entries with any existing hooks. Your Hermes home is `~/.hermes` unless you set `HERMES_HOME`.
 
@@ -25,7 +35,7 @@ hooks:
     - command: "/absolute/path/to/.hermes/agent-hooks/attention.sh"
 ```
 
-Restart Hermes, approve its first-use prompt for the hook when requested, then run `hermes hooks doctor` to check the setup. The included `test-payload.json` can be used with `hermes hooks test pre_approval_request --payload-file test-payload.json`.
+Restart Hermes, approve its first-use prompt for the hook when requested, then run `hermes hooks doctor` to check the setup. The included `test-payload.json` can be used with `hermes hooks test pre_approval_request --payload-file "$plugin_dir/test-payload.json"`.
 
 ## Use
 

@@ -34,7 +34,7 @@
       }
     ]
   },
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "bakugo",
   "license": "MIT",
   "description": "A clear Omarchy bar alert when Hermes Agent is waiting for human approval."
